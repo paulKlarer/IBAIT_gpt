@@ -1,5 +1,7 @@
 import streamlit as st
 from openai import OpenAI
+from IPython.display import Audio
+import io
 
 def main():
     st.title("IBAIT GPT")
@@ -18,11 +20,8 @@ def main():
     if 'messages' not in st.session_state:
         st.session_state.messages = []
 
-    for message in st.session_state.messages:
-        with st.chat_message(message["role"]):
-            st.markdown(message["content"])
+    printMessages(st.session_state["messages"])
 
-    
     if prompt := st.chat_input("I am grateful to offer my assistance"):
         with st.chat_message("user"):
             st.markdown(prompt)
@@ -41,9 +40,26 @@ def main():
         stream=True 
             ) 
             answer = st.write_stream(stream)
+        if st.button("read aloud"):
+            st.write("generating audio")
+            st.audio(read_aloud(answer,client))
+            st.audio("read_audio")
         st.session_state.messages.append({"role": "assistant", "content": answer})
 
-#def OpenAIAPIcall_chat(messages):
+def printMessages(messages):
+    for message in messages:
+        with st.chat_message(message["role"]):
+            st.markdown(message["content"])
+    
+def read_aloud(text,client):
+    response=client.audio.speech.create(
+        model="tts-1",
+        voice="nova",
+        input=text
+    )
+    response.stream_to_file("/generated_audiofiles/response.mp3")
+    audio_data=io.BytesIO(response)
+    return audio_data
     
 
 if __name__ == "__main__":
